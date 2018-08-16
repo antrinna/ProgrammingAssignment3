@@ -11,33 +11,38 @@ rankall <- function(outcome, num = "best") {
   if(!(outcome %in% outcomes$n)){
     stop("invalid outcome")
   }
-
-  # stateoutcomes <- outcomedata[outcomedata$State == state, ] ## subset table for requested state  
   
-  ## read outcome values
-  colnum <- outcomes$c[outcome == outcomes$n] ## find column name for requested outcome
-  # stateoutcomes[, colnum] <- as.numeric(stateoutcomes[, colnum]) ## subset vector of requested outcome rate values
-  # numstatehosp <- sum(!is.na(stateoutcomes[, colnum]))
-  
-  ##The num argument can take values "best", "worst", or an integer indicating the ranking (smaller numbers are better).
-  ##If the number given by num is larger than the number of hospitals in that state, then the function should return NA.
-  ##Hospitals that do not have data on a particular outcome should be excluded from the set of hospitals when deciding the rankings.
-  
-    if(num == "best"){
+  ##The num argument can take values "best", "worst", or an integer indicating the ranking (smaller numbers are better)
+  if(num == "best"){
     num <- 1
   } else if(num == "worst"){
-    # num <- numstatehosp
   } else if(class(num) != "numeric"){
     stop("invalid num")
   } else{
     num <- round(num, 0)
-    # if(num > numstatehosp){
-    #   return(NA)
-    # }
+  }
+
+  ## read outcome values
+  colnum <- outcomes$c[outcome == outcomes$n] ## find column name for requested outcome
+  outcomedata[, colnum] <- as.numeric(outcomedata[, colnum])
+  statesoutcomes <- split(outcomedata, outcomedata$State)  
+
+  myfun <- function(dataframe){
+
+    ##If the number given by num is larger than the number of hospitals in that state, then the function should return NA.
+    ##Hospitals that do not have data on a particular outcome should be excluded from the set of hospitals when deciding the rankings.
+    numstatehosp <- sum(!is.na(dataframe[,colnum]))
+    if(num == "worst"){
+      num <- numstatehosp
+    } else if(num > numstatehosp){
+      return(NA)
+    }
+  
+    ## For each state, find the hospital of the given rank
+    orderedstateoutcomes <- dataframe[order(dataframe[, colnum], dataframe[, 2]), c(2,colnum)]
+    orderedstateoutcomes[num, 1]
   }
   
-  ## For each state, find the hospital of the given rank
-  
   ## Return a data frame with the hospital names and the (abbreviated) state name
-  
+  lapply(statesoutcomes, myfun)
 }
